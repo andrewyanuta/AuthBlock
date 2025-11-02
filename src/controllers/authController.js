@@ -2,6 +2,7 @@ import passport from 'passport';
 import { registerUser, loginUser, createJWTToken, createSession, logout, getUserById } from '../services/authService.js';
 import { handleOAuthCallback } from '../services/oauthService.js';
 import { sanitizeUser, createErrorResponse, createSuccessResponse } from '../utils/helpers.js';
+import { getOAuthProviders } from '../utils/oauthConfig.js';
 
 export const register = async (req, res, next) => {
   try {
@@ -131,20 +132,26 @@ export const googleAuth = passport.authenticate('google', {
 
 export const googleCallback = async (req, res, next) => {
   passport.authenticate('google', async (err, user, info) => {
-    if (err) return next(err);
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(err.message)}`);
+    }
     if (!user) {
-      return res.status(401).json(
-        createErrorResponse('OAuth authentication failed', 401)
-      );
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=OAuth authentication failed`);
     }
 
     try {
       const result = await handleOAuthCallback(user, false); // JWT by default
-      return res.json(
-        createSuccessResponse(result, 'Google authentication successful')
-      );
+      const redirectUrl = new URL(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/oauth/callback`);
+      if (result.accessToken) {
+        redirectUrl.searchParams.set('token', result.accessToken);
+      }
+      if (result.refreshToken) {
+        redirectUrl.searchParams.set('refreshToken', result.refreshToken);
+      }
+      redirectUrl.searchParams.set('provider', 'google');
+      return res.redirect(redirectUrl.toString());
     } catch (error) {
-      next(error);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(error.message)}`);
     }
   })(req, res, next);
 };
@@ -184,20 +191,26 @@ export const facebookAuth = passport.authenticate('facebook', {
 
 export const facebookCallback = async (req, res, next) => {
   passport.authenticate('facebook', async (err, user, info) => {
-    if (err) return next(err);
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(err.message)}`);
+    }
     if (!user) {
-      return res.status(401).json(
-        createErrorResponse('OAuth authentication failed', 401)
-      );
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=OAuth authentication failed`);
     }
 
     try {
       const result = await handleOAuthCallback(user, false);
-      return res.json(
-        createSuccessResponse(result, 'Facebook authentication successful')
-      );
+      const redirectUrl = new URL(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/oauth/callback`);
+      if (result.accessToken) {
+        redirectUrl.searchParams.set('token', result.accessToken);
+      }
+      if (result.refreshToken) {
+        redirectUrl.searchParams.set('refreshToken', result.refreshToken);
+      }
+      redirectUrl.searchParams.set('provider', 'facebook');
+      return res.redirect(redirectUrl.toString());
     } catch (error) {
-      next(error);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(error.message)}`);
     }
   })(req, res, next);
 };
@@ -237,20 +250,26 @@ export const githubAuth = passport.authenticate('github', {
 
 export const githubCallback = async (req, res, next) => {
   passport.authenticate('github', async (err, user, info) => {
-    if (err) return next(err);
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(err.message)}`);
+    }
     if (!user) {
-      return res.status(401).json(
-        createErrorResponse('OAuth authentication failed', 401)
-      );
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=OAuth authentication failed`);
     }
 
     try {
       const result = await handleOAuthCallback(user, false);
-      return res.json(
-        createSuccessResponse(result, 'GitHub authentication successful')
-      );
+      const redirectUrl = new URL(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/oauth/callback`);
+      if (result.accessToken) {
+        redirectUrl.searchParams.set('token', result.accessToken);
+      }
+      if (result.refreshToken) {
+        redirectUrl.searchParams.set('refreshToken', result.refreshToken);
+      }
+      redirectUrl.searchParams.set('provider', 'github');
+      return res.redirect(redirectUrl.toString());
     } catch (error) {
-      next(error);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=${encodeURIComponent(error.message)}`);
     }
   })(req, res, next);
 };
@@ -282,5 +301,15 @@ export const githubCallbackSession = async (req, res, next) => {
       next(error);
     }
   })(req, res, next);
+};
+
+export const getAvailableOAuthProviders = (req, res) => {
+  const providers = getOAuthProviders();
+  return res.json(
+    createSuccessResponse(
+      { providers, count: providers.length },
+      'Available OAuth providers retrieved successfully'
+    )
+  );
 };
 

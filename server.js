@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import passport from 'passport';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import './src/config/passport.js'; // Initialize Passport strategies
 import sessionMiddleware from './src/config/session.js';
 import authRoutes from './src/routes/authRoutes.js';
@@ -13,6 +15,9 @@ import { errorHandler, notFoundHandler } from './src/middleware/errorMiddleware.
 // Load environment variables
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -20,7 +25,9 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',')
+      : ['http://localhost:3000', 'http://localhost:5173'],
     credentials: true,
   })
 );
@@ -28,6 +35,13 @@ app.use(
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve React build in production, static files in development
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static('dist'));
+} else {
+  app.use(express.static('public'));
+}
 
 // Rate limiting
 app.use('/api', apiLimiter);
@@ -51,8 +65,15 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// 404 handler
-app.use(notFoundHandler);
+// 404 handler for API routes
+app.use('/api/*', notFoundHandler);
+
+// In production, serve React app for non-API routes
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+}
 
 // Error handler
 app.use(errorHandler);
