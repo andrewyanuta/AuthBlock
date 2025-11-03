@@ -124,6 +124,18 @@ export const getUserById = async (userId) => {
       provider: true,
       createdAt: true,
       updatedAt: true,
+      userRoles: {
+        include: {
+          role: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              permissions: true,
+            },
+          },
+        },
+      },
     },
   });
 

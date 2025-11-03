@@ -9,6 +9,7 @@ import './src/config/passport.js'; // Initialize Passport strategies
 import sessionMiddleware from './src/config/session.js';
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
+import roleRoutes from './src/routes/roleRoutes.js';
 import { apiLimiter } from './src/middleware/rateLimiter.js';
 import { errorHandler, notFoundHandler } from './src/middleware/errorMiddleware.js';
 
@@ -64,6 +65,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
 
 // 404 handler for API routes
 app.use('/api/*', notFoundHandler);

@@ -7,6 +7,8 @@ yarn.lock
 .env
 .env.local
 .env.*.local
+# Keep .env.test.example but ignore actual .env.test with secrets
+# .env.test should be in gitignore if it contains real credentials
 
 # Logs
 logs
@@ -33,3 +35,6 @@ prisma/migrations/
 dist/
 build/
 
+# Testing
+coverage/
+.nyc_output/
